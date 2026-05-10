@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.3.0). Must already exist."
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine target tag
+        id: ref
+        env:
+          DISPATCH_TAG: ${{ inputs.tag }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${DISPATCH_TAG}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out the tagged commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.tag }}
+
+      - name: Extract release notes from CHANGELOG.md
+        env:
+          TAG: ${{ steps.ref.outputs.tag }}
+        run: |
+          version="${TAG#v}"
+          # Escape dots so awk's regex treats the version literally.
+          version_re=$(printf '%s' "$version" | sed 's/\./\\./g')
+          awk -v re="^## \\[${version_re}\\]" '
+            $0 ~ re { flag = 1; next }
+            flag && /^## \[/ { exit }
+            flag { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::No CHANGELOG section found for ${TAG} (looked for '## [${version}]')"
+            exit 1
+          fi
+          echo "===Release notes for ${TAG}==="
+          cat release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ref.outputs.tag }}
+          name: ${{ steps.ref.outputs.tag }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false

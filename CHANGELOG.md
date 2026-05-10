@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- GitHub Actions release workflow (`.github/workflows/release.yml`):
+  every pushed `v*.*.*` tag now publishes a GitHub Release with notes
+  extracted automatically from `CHANGELOG.md`. Supports manual
+  backfill via `workflow_dispatch` for tags pushed before this change.
+
 ## [0.3.0] - 2026-05-10
 
 ### Added
