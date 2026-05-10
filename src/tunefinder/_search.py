@@ -15,6 +15,23 @@ from ._scoring import markers_in, score_result
 logger = logging.getLogger(__name__)
 
 
+def _validate_query(artist: str, title: str) -> None:
+    """Reject empty / whitespace-only inputs at the API boundary.
+
+    Doing this here means ``find_links``, ``find_data`` and
+    ``print_search_debug`` all share the same rejection contract — a
+    single source of truth for the public API.
+    """
+    if not isinstance(artist, str) or not artist.strip():
+        raise ValueError(
+            f"artist must be a non-empty string, got {artist!r}"
+        )
+    if not isinstance(title, str) or not title.strip():
+        raise ValueError(
+            f"title must be a non-empty string, got {title!r}"
+        )
+
+
 def _collect_results(
     query: str,
     platform: Platform,
@@ -158,7 +175,12 @@ def find_links(
     """Renvoie un dict ``{platform: url}`` avec le meilleur lien trouvé.
 
     Les plateformes sans résultat n'apparaissent pas dans le dict renvoyé.
+
+    Raises:
+        ValueError: si ``artist`` ou ``title`` est vide, fait uniquement
+            d'espaces, ou n'est pas une ``str``.
     """
+    _validate_query(artist, title)
     cfg = config or get_default_config()
     plats = platforms or list(PLATFORMS.keys())
 
@@ -182,7 +204,12 @@ def find_data(
     qu'aucun candidat n'a été trouvé pour la plateforme.
 
     Le dict renvoyé est directement sérialisable en JSON via ``json.dumps``.
+
+    Raises:
+        ValueError: si ``artist`` ou ``title`` est vide, fait uniquement
+            d'espaces, ou n'est pas une ``str``.
     """
+    _validate_query(artist, title)
     cfg = config or get_default_config()
     plats = platforms or list(PLATFORMS.keys())
 

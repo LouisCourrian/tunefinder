@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from ._config import Config, get_default_config
 from ._platforms import PLATFORMS
-from ._search import _search_one_platform
+from ._search import _search_one_platform, _validate_query
 
 
 def print_search_debug(
@@ -21,7 +21,12 @@ def print_search_debug(
     Pour chaque plateforme : le candidat sélectionné, son score, sa région,
     et la liste des autres candidats avec leurs flags (marqueurs non demandés,
     marqueurs manquants).
+
+    Raises:
+        ValueError: si ``artist`` ou ``title`` est vide, fait uniquement
+            d'espaces, ou n'est pas une ``str``.
     """
+    _validate_query(artist, title)
     cfg = config or get_default_config()
     plats = platforms or list(PLATFORMS.keys())
 

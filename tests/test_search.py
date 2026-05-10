@@ -162,6 +162,43 @@ def test_unknown_platform_raises(fast_config: Config) -> None:
         find_links("a", "b", platforms=["nonexistent"], config=fast_config)
 
 
+@pytest.mark.parametrize(
+    "artist,title",
+    [
+        ("", "Track"),
+        ("Artist", ""),
+        ("   ", "Track"),
+        ("Artist", "\t\n  "),
+        ("", ""),
+    ],
+)
+def test_find_links_rejects_empty_or_whitespace_inputs(
+    fast_config: Config, artist: str, title: str
+) -> None:
+    """Empty or whitespace-only inputs would just waste DDGS calls."""
+    with pytest.raises(ValueError, match="must be a non-empty string"):
+        find_links(artist, title, config=fast_config)
+
+
+def test_find_links_rejects_non_string_inputs(fast_config: Config) -> None:
+    with pytest.raises(ValueError, match="must be a non-empty string"):
+        find_links(None, "Track", config=fast_config)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="must be a non-empty string"):
+        find_links("Artist", 42, config=fast_config)  # type: ignore[arg-type]
+
+
+def test_find_data_rejects_empty_inputs(fast_config: Config) -> None:
+    with pytest.raises(ValueError, match="must be a non-empty string"):
+        find_data("", "Track", config=fast_config)
+
+
+def test_print_search_debug_rejects_empty_inputs(fast_config: Config) -> None:
+    from tunefinder import print_search_debug
+
+    with pytest.raises(ValueError, match="must be a non-empty string"):
+        print_search_debug("", "Track", config=fast_config)
+
+
 def test_find_data_structure_is_json_serializable(
     fast_config: Config, monkeypatch: pytest.MonkeyPatch
 ) -> None:

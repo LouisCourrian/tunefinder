@@ -144,3 +144,26 @@ def test_data_and_debug_are_mutually_exclusive(
     assert exc.value.code == 2
     err = capsys.readouterr().err
     assert "not allowed with" in err or "mutually exclusive" in err
+
+
+def test_empty_artist_prints_clean_error_no_traceback(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    rc = cli.main(["", "Balalaika", "--platforms", "spotify", "--delay", "0"])
+    assert rc == 2
+    err = capsys.readouterr().err
+    # No traceback should leak — just a single-line error message.
+    assert "Traceback" not in err
+    assert "must be a non-empty string" in err
+    # Stdout stays clean too.
+    assert capsys.readouterr().out == ""
+
+
+def test_whitespace_title_prints_clean_error(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    rc = cli.main(["Artist", "   ", "--platforms", "spotify", "--delay", "0"])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "Traceback" not in err
+    assert "must be a non-empty string" in err

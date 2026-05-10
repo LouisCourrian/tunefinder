@@ -109,20 +109,36 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     config = _build_config(args)
 
-    if args.debug:
-        print_search_debug(
-            args.artist, args.title, platforms=args.platforms, config=config
-        )
-        return 0
+    try:
+        if args.debug:
+            print_search_debug(
+                args.artist,
+                args.title,
+                platforms=args.platforms,
+                config=config,
+            )
+            return 0
 
-    if args.data:
-        result: object = find_data(
-            args.artist, args.title, platforms=args.platforms, config=config
-        )
-    else:
-        result = find_links(
-            args.artist, args.title, platforms=args.platforms, config=config
-        )
+        if args.data:
+            result: object = find_data(
+                args.artist,
+                args.title,
+                platforms=args.platforms,
+                config=config,
+            )
+        else:
+            result = find_links(
+                args.artist,
+                args.title,
+                platforms=args.platforms,
+                config=config,
+            )
+    except ValueError as exc:
+        # Empty / whitespace artist or title, or any other API-level
+        # validation error: print a clean message and exit 2 (the
+        # conventional code for usage errors).
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
     pretty = args.pretty or sys.stdout.isatty()
     indent = 2 if pretty else None
