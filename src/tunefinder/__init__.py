@@ -15,7 +15,7 @@ from ._debug import print_search_debug
 from ._platforms import PLATFORMS
 from ._search import find_data, find_links
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "Config",
