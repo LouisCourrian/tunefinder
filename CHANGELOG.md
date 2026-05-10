@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extracted automatically from `CHANGELOG.md`. Supports manual
   backfill via `workflow_dispatch` for tags pushed before this change.
 
+### Changed
+
+- README overhaul: centered header with badges (CI, latest release,
+  Python versions, license, tests), emoji-headed sections, dedicated
+  "Status" and "Roadmap to 1.0" sections with checkbox-tracked progress,
+  and a `## Try it` quickstart for contributors.
+
 ## [0.3.0] - 2026-05-10
 
 ### Added

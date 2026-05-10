@@ -1,57 +1,77 @@
-# tunefinder
+<div align="center">
 
-Find streaming links for any track across **Spotify**, **Apple Music**,
-**Deezer**, **YouTube Music**, **Qobuz** and **SoundCloud** — using
-DuckDuckGo as a search backend, with smart scoring that avoids returning
-acoustic/remix versions when you asked for the original (and vice versa).
+# 🎵 tunefinder
 
-## Installation
+**Find the streaming link of any track across every major platform — in one line of Python.**
 
-```bash
-pip install git+https://github.com/LouisCourrian/tunefinder.git
-```
+[![CI](https://github.com/LouisCourrian/tunefinder/actions/workflows/ci.yml/badge.svg)](https://github.com/LouisCourrian/tunefinder/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/LouisCourrian/tunefinder)](https://github.com/LouisCourrian/tunefinder/releases)
+[![Python versions](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-36%20passed-brightgreen.svg)](tests/)
 
-## Quickstart
+*Spotify, Apple Music, Deezer, YouTube Music, Qobuz, SoundCloud — one call, every link.*
+
+</div>
+
+---
 
 ```python
 from tunefinder import find_links
 
-links = find_links("9Lana", "Balalaika")
+find_links("9Lana", "Balalaika")
 # {
 #   "spotify":      "https://open.spotify.com/track/...",
 #   "appleMusic":   "https://music.apple.com/...",
 #   "deezer":       "https://www.deezer.com/track/...",
 #   "youtubeMusic": "https://music.youtube.com/watch?v=...",
 #   "qobuz":        "https://www.qobuz.com/fr-fr/album/...?track_id=...",
-#   "soundcloud":   "https://soundcloud.com/artist/track-slug",
+#   "soundcloud":   "https://soundcloud.com/9lana/aovo7ub0aqee",
 # }
+```
+
+That's it. No API keys, no OAuth, no manual setup — `tunefinder` searches
+DuckDuckGo with platform-specific filters and a scoring system that picks
+the *original* version of a track over remixes, covers and acoustic edits.
+
+## ✨ Features
+
+- 🎯 **Smart version scoring** — penalises acoustic / remix / live results when you didn't ask for them
+- 🌍 **Multi-region fallback** — iterates DuckDuckGo regions until a perfect-score match is found
+- 🪶 **One dependency** — just [`ddgs`](https://pypi.org/project/ddgs/), no auth, no API keys
+- 🔌 **Six platforms** — Spotify, Apple Music, Deezer, YouTube Music, Qobuz, SoundCloud
+- 🧠 **Deduplicated results** — same URL with multiple snippets keeps only the best-scoring one
+- 🐛 **Inspectable** — `find_data()` returns every candidate with scores, `print_search_debug()` traces the search
+- 🧪 **Typed** — `mypy --strict` clean and ships PEP 561 `py.typed`
+
+## 📦 Installation
+
+```bash
+pip install git+https://github.com/LouisCourrian/tunefinder.git
+```
+
+## 🚀 Quick start
+
+### Find a link
+
+```python
+from tunefinder import find_links
+
+links = find_links("Stromae", "Alors on danse")
+print(links["spotify"])
+# → https://open.spotify.com/track/...
 ```
 
 Limit to specific platforms:
 
 ```python
-find_links("9Lana", "Balalaika", platforms=["spotify", "deezer"])
+find_links("Stromae", "Alors on danse", platforms=["spotify", "deezer"])
 ```
 
-## Why not just search?
+### Get all candidates with scores
 
-DuckDuckGo (and any search engine) returns multiple versions of the same
-track: studio, acoustic, live, remixes, covers, slowed/sped-up edits…
-A naive `site:` search picks the first match, which often isn't the one
-you want.
-
-`tunefinder` solves this with a small scoring system:
-
-- Detects whether **you** asked for a specific version (`"Title - Acoustic"`).
-- Penalizes results containing version markers you didn't ask for.
-- Bonifies results that match the version markers you did ask for.
-- Deduplicates URLs by keeping the most informative snippet per URL.
-- Tries multiple DuckDuckGo regions until a perfect match is found.
-
-## Detailed output
-
-For audit, JSON export, or UI integration, use `find_data` — it returns
-all candidates ranked by score:
+For audit, JSON export or UI integration, use `find_data` — it returns
+every candidate ranked by score:
 
 ```python
 import json
@@ -82,12 +102,10 @@ print(json.dumps(data, indent=2, ensure_ascii=False))
 }
 ```
 
-The first candidate of each platform list is the one selected. An empty
-list means nothing was found for that platform.
+The first candidate of each platform list is the one `find_links` would
+return. An empty list means nothing was found for that platform.
 
-## Debugging a result
-
-If you suspect a wrong selection, print the full search trace:
+### Debug a tricky result
 
 ```python
 from tunefinder import print_search_debug
@@ -95,12 +113,10 @@ from tunefinder import print_search_debug
 print_search_debug("9Lana", "Balalaika")
 ```
 
-You'll see the selected candidate plus all alternatives, with their score,
-region, description, and the markers detected (acoustic, live, remix…).
+Prints the selected candidate plus all alternatives, with their score,
+region, description, and detected markers (acoustic, live, remix…).
 
-## Customization
-
-For non-default behavior, pass a `Config` object:
+### Tune the search
 
 ```python
 from tunefinder import Config, find_links
@@ -116,7 +132,22 @@ find_links("Stromae", "Alors on danse", config=config)
 
 All `Config` fields are documented in `Config.__doc__`.
 
-## Supported platforms
+## 🎯 Why not just search?
+
+DuckDuckGo (and any search engine) returns multiple versions of the same
+track: studio, acoustic, live, remixes, covers, slowed/sped-up edits…
+A naive `site:` search picks the first match, which often isn't the one
+you want.
+
+`tunefinder` solves this with a small scoring system:
+
+- Detects whether **you** asked for a specific version (`"Title - Acoustic"`).
+- Penalises results containing version markers you didn't ask for.
+- Bonifies results that match the version markers you did ask for.
+- Deduplicates URLs by keeping the most informative snippet per URL.
+- Tries multiple DuckDuckGo regions until a perfect match is found.
+
+## 🎚️ Supported platforms
 
 | Platform      | Key in dict    | Notes                                                       |
 | ------------- | -------------- | ----------------------------------------------------------- |
@@ -127,76 +158,104 @@ All `Config` fields are documented in `Config.__doc__`.
 | Qobuz         | `qobuz`        | Track URL = album page + `?track_id=N` query string.        |
 | SoundCloud    | `soundcloud`   | URLs are `/<artist>/<track-slug>` — playlists are excluded. |
 
-## Unsupported platforms
+## 🚫 Unsupported platforms
 
 These services were considered but cannot be supported reliably with
 DuckDuckGo as a search backend:
 
-| Platform     | Why it isn't supported                                                                                                                                |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tidal        | Tidal track pages (`tidal.com/browse/track/...`) are not indexed by DuckDuckGo — no results to score.                                                 |
+| Platform     | Why it isn't supported                                                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tidal        | Tidal track pages (`tidal.com/browse/track/...`) are not indexed by DuckDuckGo — no results to score.                                                   |
 | Amazon Music | Track pages are largely JS-rendered or behind a login wall; DuckDuckGo indexation is poor even when querying every regional TLD via `site:A OR site:B`. |
-| Napster      | Since the rebrand, `app.napster.com` track pages are largely behind a login wall and have very weak SEO indexation.                                   |
+| Napster      | Since the rebrand, `app.napster.com` track pages are largely behind a login wall and have very weak SEO indexation.                                     |
 
-If indexation improves for any of these, adding them is a one-entry change
-in [`src/tunefinder/_platforms.py`](src/tunefinder/_platforms.py) plus URL
-patterns in [`tests/test_platforms.py`](tests/test_platforms.py).
+If indexation improves for any of these, adding them is a one-entry
+change in [`src/tunefinder/_platforms.py`](src/tunefinder/_platforms.py)
+plus URL patterns in [`tests/test_platforms.py`](tests/test_platforms.py).
 
-The URL regex accepts every Amazon Music TLD, so any regional URL returned
-by DuckDuckGo is still validated. To add or remove regions, edit
-``extra_sites`` on the ``amazonMusic`` entry in
-[`src/tunefinder/_platforms.py`](src/tunefinder/_platforms.py).
+## 🔍 How does it actually work?
 
-## Limitations
+For each requested platform, `tunefinder`:
 
-- This library scrapes DuckDuckGo via the `ddgs` package. DuckDuckGo may
-  rate-limit or change its HTML at any time, which can break the library
-  until updated.
+1. Builds a `site:<domain> "<artist>" "<title>"` query.
+2. Sends it to DuckDuckGo via the [`ddgs`](https://pypi.org/project/ddgs/) package, iterating through a list of regions.
+3. Filters returned URLs against a per-platform regex (`spotify.com/track/...`, etc.).
+4. Scores each candidate against the requested artist + title and any version markers you asked for.
+5. Returns the top-scoring URL — and short-circuits as soon as a perfect match is found in any region.
+
+## ⚠️ Limitations
+
+- DuckDuckGo may rate-limit or change its HTML at any time, which can
+  break the library until updated.
 - Searching many tracks back-to-back (dozens or more) will eventually
-  trigger rate limits. Consider increasing `delay_between_queries` or
-  caching results in your own application.
+  trigger rate limits. Increase `delay_between_queries` or cache results
+  in your own application.
 - YouTube Music indexing on DuckDuckGo is uneven. Some official tracks
   may not surface in the results even though they exist.
-- This is not affiliated with Spotify, Apple, Deezer, YouTube, or
-  DuckDuckGo. All trademarks belong to their respective owners.
+- This is not affiliated with Spotify, Apple, Deezer, YouTube, Qobuz,
+  SoundCloud, or DuckDuckGo. All trademarks belong to their respective
+  owners.
 
-## Roadmap
+## 🧪 Try it
 
-`tunefinder` is currently at **v0.2.0**. The library is functional and
-useful as-is, but a few items remain before tagging a stable **v1.0**.
+```bash
+git clone https://github.com/LouisCourrian/tunefinder
+cd tunefinder
+pip install -e ".[dev]"
+pytest
+```
 
-### Toward v0.3 — housekeeping
+## ✅ Status
 
-- Replace the placeholder author metadata in `pyproject.toml`.
-- Ship a `py.typed` marker so consumer projects pick up the type hints.
-- Add a GitHub Actions workflow running `pytest + ruff + mypy` on every
-  pull request, so `main` cannot regress silently.
+`tunefinder` is currently at **`0.3.0`** (Beta). The public API —
+`find_links`, `find_data`, `print_search_debug`, `Config` — works and is
+unlikely to change much, but breaking changes are still allowed within
+the `0.x` series. Once `1.0.0` ships, the API follows Semantic Versioning:
+pin to a major version (`tunefinder>=1.0,<2.0`) and you're good.
 
-### Toward v1.0 — stable API
+See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
-- Decide and document the error contract: should a DDGS failure (network,
-  rate-limit, parser break) raise an exception, or stay silent and return
-  a partial dict? Whatever the choice, it gets locked at 1.0.
-- Validate inputs explicitly: empty or whitespace-only artist/title
-  should raise `ValueError` instead of silently returning no results.
-- Add a retry/backoff loop on DDGS rate-limit exceptions instead of
-  giving up after the first failure.
-- Search platforms concurrently with a `ThreadPoolExecutor`. Today
-  `find_links` runs the 6 platforms serially, which can take ~20 s for
-  a full lookup — concurrent search would drop this to roughly the time
-  of the slowest single platform.
-- Bump the `Development Status` classifier to `5 - Production/Stable`
-  once the API is considered frozen.
+## 🗺️ Roadmap to 1.0
 
-### Considered for later
+### Done in 0.3
 
-- Optional in-process TTL cache via `Config(cache_ttl_seconds=...)`.
-- CLI entry point: `python -m tunefinder "9Lana" "Balalaika"` printing
-  the JSON output for shell scripting.
-- An `async` variant for FastAPI / Starlette consumers.
-- Integration tests hitting real DuckDuckGo, gated behind a `slow`
-  marker and only run nightly.
+- [x] **Real package metadata** in `pyproject.toml` (no more placeholders).
+- [x] **PEP 561 `py.typed` marker** — type annotations exposed to consumer
+      type checkers (mypy, pyright, …).
+- [x] **GitHub Actions CI** — `ruff` + `mypy --strict` + `pytest` on
+      Python 3.10–3.13 for every push and PR on `main`.
+- [x] **Automated GitHub releases** — pushing a `v*.*.*` tag publishes a
+      release whose body is extracted from `CHANGELOG.md`.
 
-## License
+### Required before tagging 1.0
+
+- [ ] **Validate inputs** — empty / whitespace-only `artist` or `title`
+      should raise `ValueError` instead of returning silently.
+- [ ] **Retry / backoff on rate-limit** — currently a single DDGS failure
+      per region kills the lookup. Exponential backoff would make the
+      library robust under load.
+- [ ] **Concurrent platform search** — today `find_links` runs the
+      6 platforms serially. A `ThreadPoolExecutor` would drop a full
+      lookup from ~20 s to roughly the slowest single platform.
+- [ ] **Decide and document the error contract** — DDGS failures should
+      either raise an explicit exception or stay silent and return a
+      partial dict. Whichever, lock it at 1.0.
+- [ ] **Bump `Development Status :: 5 - Production/Stable`** and tag
+      `v1.0.0`.
+
+### Considered for later (post-1.0)
+
+- [ ] Optional in-process TTL cache via `Config(cache_ttl_seconds=...)`.
+- [ ] CLI entry point: `python -m tunefinder "9Lana" "Balalaika"`.
+- [ ] `async` variant for FastAPI / Starlette consumers.
+- [ ] Native API fallback for Apple Music (iTunes Search) and Deezer
+      (api.deezer.com) — free, no key, more reliable than DDGS for
+      those two.
+
+## 📄 License
 
 MIT — see [LICENSE](LICENSE).
+
+`tunefinder` is an independent project, not affiliated with Spotify,
+Apple Music, Deezer, YouTube Music, Qobuz, SoundCloud, or DuckDuckGo.
+All trademarks belong to their respective owners.
