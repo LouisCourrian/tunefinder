@@ -76,6 +76,14 @@ class Config:
         score_marker_unwanted: Pénalité pour un marqueur trouvé mais non demandé.
         score_marker_matched: Bonus pour un marqueur trouvé ET demandé.
         score_marker_missing: Pénalité pour un marqueur demandé mais absent.
+        max_retries: Nombre de tentatives supplémentaires sur une erreur DDGS
+            transitoire (rate-limit, timeout). 0 = aucun retry.
+        initial_backoff_seconds: Pause avant le premier retry. Doublée à
+            chaque tentative suivante (cf. ``backoff_multiplier``).
+        backoff_multiplier: Facteur d'augmentation du délai entre retries.
+        parallel: Si True, ``find_links`` et ``find_data`` interrogent les
+            plateformes en parallèle (``ThreadPoolExecutor``).
+        max_workers: Nombre maximum de threads pour la recherche parallèle.
     """
 
     regions: tuple[str, ...] = DEFAULT_REGIONS
@@ -89,6 +97,13 @@ class Config:
     score_marker_unwanted: int = -50
     score_marker_matched: int = 30
     score_marker_missing: int = -30
+
+    max_retries: int = 2
+    initial_backoff_seconds: float = 1.0
+    backoff_multiplier: float = 2.0
+
+    parallel: bool = True
+    max_workers: int = 6
 
 
 # Instance partagée utilisée quand l'utilisateur ne passe pas de Config.

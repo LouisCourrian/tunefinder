@@ -9,8 +9,13 @@ from tunefinder import Config, find_data, find_links
 
 @pytest.fixture
 def fast_config() -> Config:
-    """Config sans pause entre requêtes pour accélérer les tests."""
-    return Config(delay_between_queries=0.0, regions=("wt-wt",))
+    """Config sans pause entre requêtes ni pause de retry, pour accélérer les tests."""
+    return Config(
+        delay_between_queries=0.0,
+        regions=("wt-wt",),
+        initial_backoff_seconds=0.0,
+        parallel=False,
+    )
 
 
 def _make_ddgs_mock(results_by_query: dict[str, list[dict[str, str]]]):
@@ -197,6 +202,95 @@ def test_print_search_debug_rejects_empty_inputs(fast_config: Config) -> None:
 
     with pytest.raises(ValueError, match="must be a non-empty string"):
         print_search_debug("", "Track", config=fast_config)
+
+
+# ---------------------------------------------------------------------------
+# Retry / backoff on transient DDGS failures
+# ---------------------------------------------------------------------------
+
+
+def _spotify_hit() -> dict[str, str]:
+    return {
+        "href": "https://open.spotify.com/track/X",
+        "title": "Balalaika - 9Lana",
+        "body": "9Lana single",
+    }
+
+
+def test_ratelimit_is_retried_and_eventually_succeeds(
+    fast_config: Config, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A RatelimitException on the first call is retried; second call wins."""
+    from ddgs.exceptions import RatelimitException
+
+    calls = {"n": 0}
+
+    class FlakyDDGS:
+        def text(
+            self, query: str, region: str = "", max_results: int = 10
+        ) -> list[dict[str, str]]:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise RatelimitException("simulated rate limit")
+            return [_spotify_hit()]
+
+    monkeypatch.setattr("tunefinder._search.DDGS", FlakyDDGS)
+    links = find_links(
+        "9Lana", "Balalaika", platforms=["spotify"], config=fast_config
+    )
+    assert links == {"spotify": "https://open.spotify.com/track/X"}
+    assert calls["n"] == 2  # one failure + one retry success
+
+
+def test_retries_exhausted_then_gives_up_silently(
+    fast_config: Config, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If every attempt raises a transient error, we log and return empty."""
+    from ddgs.exceptions import RatelimitException
+
+    calls = {"n": 0}
+
+    class AlwaysFlakyDDGS:
+        def text(
+            self, query: str, region: str = "", max_results: int = 10
+        ) -> list[dict[str, str]]:
+            calls["n"] += 1
+            raise RatelimitException("rate-limited forever")
+
+    monkeypatch.setattr("tunefinder._search.DDGS", AlwaysFlakyDDGS)
+    links = find_links(
+        "9Lana", "Balalaika", platforms=["spotify"], config=fast_config
+    )
+    assert links == {}
+    # 2 queries (with / without quotes) × (1 initial + max_retries=2 retries)
+    # = at most 6 attempts. With early_exit and 1 region, the first query
+    # exhausts its 3 attempts, then the second query exhausts its 3.
+    assert calls["n"] == (fast_config.max_retries + 1) * 2
+
+
+def test_non_transient_error_is_not_retried(
+    fast_config: Config, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`DDGSException("No results")` is not transient — no retry."""
+    from ddgs.exceptions import DDGSException
+
+    calls = {"n": 0}
+
+    class NoResultsDDGS:
+        def text(
+            self, query: str, region: str = "", max_results: int = 10
+        ) -> list[dict[str, str]]:
+            calls["n"] += 1
+            raise DDGSException("No results found")
+
+    monkeypatch.setattr("tunefinder._search.DDGS", NoResultsDDGS)
+    links = find_links(
+        "9Lana", "Balalaika", platforms=["spotify"], config=fast_config
+    )
+    assert links == {}
+    # Exactly one attempt per query, no retries on a non-transient error.
+    # 2 queries (with / without quotes) × 1 attempt = 2 calls.
+    assert calls["n"] == 2
 
 
 def test_find_data_structure_is_json_serializable(

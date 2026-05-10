@@ -7,10 +7,19 @@ import time
 from typing import Any
 
 from ddgs import DDGS
+from ddgs.exceptions import RatelimitException, TimeoutException
 
 from ._config import Config, get_default_config
 from ._platforms import PLATFORMS, Platform
 from ._scoring import markers_in, score_result
+
+# Erreurs DDGS qu'on retente : rate-limit et timeout réseau. Les autres
+# (notamment ``DDGSException("No results found")`` quand la requête ne
+# renvoie rien) sont par nature non transitoires — pas la peine d'attendre.
+_RETRYABLE_DDGS_EXCEPTIONS: tuple[type[BaseException], ...] = (
+    RatelimitException,
+    TimeoutException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +41,60 @@ def _validate_query(artist: str, title: str) -> None:
         )
 
 
+def _ddgs_text_with_retry(
+    query: str, region: str, config: Config
+) -> list[dict[str, Any]]:
+    """Wrap ``DDGS().text(...)`` with exponential backoff on transient errors.
+
+    Retries up to ``config.max_retries`` times on rate-limit / timeout, with
+    an exponential delay between attempts. Non-transient errors (e.g.
+    ``DDGSException("No results found")``) are re-raised immediately so the
+    caller can decide how to handle them.
+    """
+    last_exc: BaseException | None = None
+    for attempt in range(config.max_retries + 1):
+        try:
+            return list(
+                DDGS().text(
+                    query,
+                    region=region,
+                    max_results=config.max_results_per_query,
+                )
+            )
+        except _RETRYABLE_DDGS_EXCEPTIONS as exc:
+            last_exc = exc
+            if attempt >= config.max_retries:
+                break
+            backoff = config.initial_backoff_seconds * (
+                config.backoff_multiplier**attempt
+            )
+            logger.warning(
+                "DDGS transient error (attempt %d/%d) for query=%r region=%s: "
+                "%s — retrying in %.1fs",
+                attempt + 1,
+                config.max_retries + 1,
+                query,
+                region,
+                exc,
+                backoff,
+            )
+            time.sleep(backoff)
+    # Exhausted retries on a transient error: re-raise so the outer
+    # _collect_results handler logs it and we move on to the next region.
+    assert last_exc is not None  # narrows type for mypy
+    raise last_exc
+
+
 def _collect_results(
     query: str,
     platform: Platform,
     region: str,
     config: Config,
 ) -> list[dict[str, Any]]:
-    """Lance UNE recherche DDGS et filtre par pattern d'URL de la plateforme."""
+    """Lance UNE recherche DDGS (avec retry) et filtre par pattern d'URL."""
     results: list[dict[str, Any]] = []
     try:
-        for r in DDGS().text(
-            query, region=region, max_results=config.max_results_per_query
-        ):
+        for r in _ddgs_text_with_retry(query, region, config):
             m = platform.pattern.search(r.get("href", ""))
             if m:
                 results.append(
