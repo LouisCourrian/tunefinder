@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from ddgs import DDGS
@@ -217,6 +218,50 @@ def _candidate_to_dict(c: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def _run_per_platform(
+    artist: str,
+    title: str,
+    plats: list[str],
+    config: Config,
+    *,
+    early_exit: bool,
+) -> dict[str, dict[str, Any]]:
+    """Run ``_search_one_platform`` for each platform, optionally in parallel.
+
+    Returns a ``{platform_name: result_dict}`` mapping. When
+    ``config.parallel`` is True the platforms are searched concurrently
+    via a thread pool (capped at ``config.max_workers``); otherwise they
+    run sequentially in the requested order. The result is the same
+    either way — only the wall-clock time changes.
+    """
+    if not config.parallel or len(plats) <= 1:
+        return {
+            plat: _search_one_platform(
+                artist, title, plat, config, early_exit=early_exit
+            )
+            for plat in plats
+        }
+
+    workers = min(config.max_workers, len(plats))
+    results: dict[str, dict[str, Any]] = {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        future_to_plat = {
+            pool.submit(
+                _search_one_platform,
+                artist,
+                title,
+                plat,
+                config,
+                early_exit=early_exit,
+            ): plat
+            for plat in plats
+        }
+        for future in future_to_plat:
+            plat = future_to_plat[future]
+            results[plat] = future.result()
+    return results
+
+
 def find_links(
     artist: str,
     title: str,
@@ -235,9 +280,13 @@ def find_links(
     cfg = config or get_default_config()
     plats = platforms or list(PLATFORMS.keys())
 
+    per_plat = _run_per_platform(artist, title, plats, cfg, early_exit=True)
+
     out: dict[str, str] = {}
+    # Iterate in the original ``plats`` order so the returned dict is stable
+    # regardless of which thread finished first.
     for plat in plats:
-        result = _search_one_platform(artist, title, plat, cfg, early_exit=True)
+        result = per_plat[plat]
         if result["selected"] is not None:
             out[plat] = result["selected"]["url"]
     return out
@@ -275,8 +324,11 @@ def find_data(
         "platforms": {},
     }
 
+    per_plat = _run_per_platform(artist, title, plats, cfg, early_exit=False)
+
+    # Iterate in original platform order for output stability.
     for plat in plats:
-        result = _search_one_platform(artist, title, plat, cfg, early_exit=False)
+        result = per_plat[plat]
 
         all_candidates: list[dict[str, Any]] = []
         if result["selected"] is not None:

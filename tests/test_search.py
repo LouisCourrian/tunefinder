@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from tunefinder import Config, find_data, find_links
+from tunefinder import PLATFORMS, Config, find_data, find_links
 
 
 @pytest.fixture
@@ -266,6 +266,135 @@ def test_retries_exhausted_then_gives_up_silently(
     # = at most 6 attempts. With early_exit and 1 region, the first query
     # exhausts its 3 attempts, then the second query exhausts its 3.
     assert calls["n"] == (fast_config.max_retries + 1) * 2
+
+
+# ---------------------------------------------------------------------------
+# Concurrent platform search
+# ---------------------------------------------------------------------------
+
+
+def _all_platforms_mock() -> type:
+    """Build a DDGS mock returning one canonical hit per platform site."""
+    hits = {
+        "site:open.spotify.com/track": [
+            {
+                "href": "https://open.spotify.com/track/SP",
+                "title": "Balalaika - 9Lana",
+                "body": "9Lana single",
+            }
+        ],
+        "site:music.apple.com": [
+            {
+                "href": "https://music.apple.com/us/album/x/1?i=2",
+                "title": "Balalaika - 9Lana",
+                "body": "9Lana single",
+            }
+        ],
+        "site:deezer.com": [
+            {
+                "href": "https://www.deezer.com/track/123",
+                "title": "Balalaika - 9Lana",
+                "body": "9Lana single",
+            }
+        ],
+        "site:music.youtube.com": [
+            {
+                "href": "https://music.youtube.com/watch?v=abc",
+                "title": "Balalaika - 9Lana",
+                "body": "9Lana single",
+            }
+        ],
+        "site:qobuz.com": [
+            {
+                "href": "https://www.qobuz.com/fr-fr/album/x/1?track_id=9",
+                "title": "Balalaika - 9Lana",
+                "body": "9Lana single",
+            }
+        ],
+        "site:soundcloud.com": [
+            {
+                "href": "https://soundcloud.com/9lana/balalaika",
+                "title": "Balalaika - 9Lana",
+                "body": "9Lana single",
+            }
+        ],
+    }
+
+    class FakeDDGS:
+        def text(
+            self, query: str, region: str = "", max_results: int = 10
+        ) -> list[dict[str, str]]:
+            for substring, results in hits.items():
+                if substring in query:
+                    return results
+            return []
+
+    return FakeDDGS
+
+
+def test_parallel_and_serial_produce_identical_results(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Threading must not change what comes out — only how fast."""
+    monkeypatch.setattr("tunefinder._search.DDGS", _all_platforms_mock())
+
+    base = Config(
+        delay_between_queries=0.0,
+        regions=("wt-wt",),
+        initial_backoff_seconds=0.0,
+    )
+    serial = find_links("9Lana", "Balalaika", config=Config(**{
+        **base.__dict__, "parallel": False,
+    }))
+    parallel = find_links("9Lana", "Balalaika", config=Config(**{
+        **base.__dict__, "parallel": True,
+    }))
+    assert serial == parallel
+    # Sanity: we got hits for all six platforms.
+    assert set(serial) == set(PLATFORMS.keys())
+
+
+def test_parallel_is_faster_than_serial_under_a_sleep_mock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With a slow DDGS, 6 parallel platforms should clearly beat serial."""
+    import time as _time
+
+    class SlowDDGS:
+        def text(
+            self, query: str, region: str = "", max_results: int = 10
+        ) -> list[dict[str, str]]:
+            _time.sleep(0.2)
+            # Return nothing — we only care about timing here, not content.
+            return []
+
+    monkeypatch.setattr("tunefinder._search.DDGS", SlowDDGS)
+
+    base = Config(
+        delay_between_queries=0.0,
+        regions=("wt-wt",),
+        initial_backoff_seconds=0.0,
+    )
+
+    t0 = _time.perf_counter()
+    find_links("9Lana", "Balalaika", config=Config(**{
+        **base.__dict__, "parallel": False,
+    }))
+    serial_elapsed = _time.perf_counter() - t0
+
+    t0 = _time.perf_counter()
+    find_links("9Lana", "Balalaika", config=Config(**{
+        **base.__dict__, "parallel": True, "max_workers": 6,
+    }))
+    parallel_elapsed = _time.perf_counter() - t0
+
+    # 6 platforms × 2 queries × 0.2s ≈ 2.4s serial.
+    # In parallel they all run concurrently → ≈ 0.4s (2 queries × 0.2s).
+    # Generous threshold to absorb scheduler jitter on CI.
+    assert parallel_elapsed < serial_elapsed * 0.6, (
+        f"Parallel ({parallel_elapsed:.2f}s) should clearly beat "
+        f"serial ({serial_elapsed:.2f}s)"
+    )
 
 
 def test_non_transient_error_is_not_retried(
