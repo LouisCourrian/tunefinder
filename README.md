@@ -5,10 +5,10 @@
 **Find the streaming link of any track across every major platform — in one line of Python.**
 
 [![CI](https://github.com/LouisCourrian/tunefinder/actions/workflows/ci.yml/badge.svg)](https://github.com/LouisCourrian/tunefinder/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/LouisCourrian/tunefinder)](https://github.com/LouisCourrian/tunefinder/releases)
-[![Python versions](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
+[![PyPI version](https://img.shields.io/pypi/v/tunefinder.svg)](https://pypi.org/project/tunefinder/)
+[![Python versions](https://img.shields.io/pypi/pyversions/tunefinder.svg)](https://pypi.org/project/tunefinder/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-36%20passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-59%20passed-brightgreen.svg)](tests/)
 
 *Spotify, Apple Music, Deezer, YouTube Music, Qobuz, SoundCloud — one call, every link.*
 
@@ -45,6 +45,18 @@ the *original* version of a track over remixes, covers and acoustic edits.
 - 🧪 **Typed** — `mypy --strict` clean and ships PEP 561 `py.typed`
 
 ## 📦 Installation
+
+```bash
+pip install tunefinder
+```
+
+Or, to pin to a major version (recommended for production):
+
+```bash
+pip install "tunefinder>=1.0,<2.0"
+```
+
+Installing from source (development or unreleased commits):
 
 ```bash
 pip install git+https://github.com/LouisCourrian/tunefinder.git
