@@ -257,15 +257,15 @@ pytest
 
 ## ✅ Status
 
-`tunefinder` is currently at **`0.4.0`** (Beta). The public API —
-`find_links`, `find_data`, `print_search_debug`, `Config` — works and is
-unlikely to change much, but breaking changes are still allowed within
-the `0.x` series. Once `1.0.0` ships, the API follows Semantic Versioning:
-pin to a major version (`tunefinder>=1.0,<2.0`) and you're good.
+`tunefinder` is **stable** as of `1.0.0`. The public API — `find_links`,
+`find_data`, `print_search_debug`, `Config`, `PLATFORMS` — follows
+[Semantic Versioning](https://semver.org/). Pin to a major version
+(`tunefinder>=1.0,<2.0`) and you're good.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full release history.
+See [CHANGELOG.md](CHANGELOG.md) for the full release history and the
+versioning policy.
 
-## 🗺️ Roadmap to 1.0
+## 🗺️ Release history
 
 ### Done in 0.3
 
@@ -284,23 +284,22 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history.
       `--delay` / `--pretty` flags. Output is JSON by default
       (compact for piping, indented on a TTY).
 
-### Required before tagging 1.0
+### Done in 1.0
 
-- [ ] **Validate inputs** — empty / whitespace-only `artist` or `title`
-      should raise `ValueError` instead of returning silently.
-- [ ] **Retry / backoff on rate-limit** — currently a single DDGS failure
-      per region kills the lookup. Exponential backoff would make the
-      library robust under load.
-- [ ] **Concurrent platform search** — today `find_links` runs the
-      6 platforms serially. A `ThreadPoolExecutor` would drop a full
-      lookup from ~20 s to roughly the slowest single platform.
-- [ ] **Decide and document the error contract** — DDGS failures should
-      either raise an explicit exception or stay silent and return a
-      partial dict. Whichever, lock it at 1.0.
-- [ ] **Bump `Development Status :: 5 - Production/Stable`** and tag
-      `v1.0.0`.
+- [x] **Input validation** — empty / whitespace / non-string `artist`
+      or `title` raises `ValueError` before any DDGS call. CLI surfaces
+      it as a clean one-line error.
+- [x] **Retry / backoff on rate-limit** — `RatelimitException` and
+      `TimeoutException` are retried with exponential backoff. Non-
+      transient errors (e.g. "no results found") are not retried.
+- [x] **Concurrent platform search** — `ThreadPoolExecutor` runs the
+      6 platforms in parallel. A full lookup drops from ~20 s to
+      roughly the slowest single platform.
+- [x] **Error contract documented** — explicit section in the README
+      and `find_links`' docstring. Locked under SemVer.
+- [x] **`Development Status :: 5 - Production/Stable`** + tag `v1.0.0`.
 
-### Considered for later (post-1.0)
+### Considered for later
 
 - [ ] Optional in-process TTL cache via `Config(cache_ttl_seconds=...)`.
 - [ ] `async` variant for FastAPI / Starlette consumers.

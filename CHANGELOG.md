@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-11
+
+First stable release. The public API — `find_links`, `find_data`,
+`print_search_debug`, `Config`, `PLATFORMS` — is now frozen under
+[Semantic Versioning](https://semver.org/). Breaking changes will only
+happen in a subsequent major release.
+
+### Added
+
+- **Input validation** — `find_links`, `find_data` and
+  `print_search_debug` reject empty / whitespace-only / non-`str`
+  `artist` or `title` with `ValueError`, before any DDGS call. Wasted
+  rate-limit budget on impossible queries no longer happens. The CLI
+  catches the same `ValueError` and prints a clean one-line error
+  message instead of a Python traceback.
+- **Retry / backoff on transient DDGS failures** — `RatelimitException`
+  and `TimeoutException` are now retried up to `Config.max_retries`
+  times with exponential backoff (`Config.initial_backoff_seconds`,
+  `Config.backoff_multiplier`). Non-transient errors (e.g. "no results
+  found") are not retried.
+- **Concurrent platform search** — `find_links` and `find_data` now
+  query all platforms in parallel via a `ThreadPoolExecutor`. A full
+  six-platform lookup drops from ~20 s to roughly the time of the
+  slowest single platform. Disable with `Config(parallel=False)`.
+- **Documented error contract** — explicit section in the README and in
+  `find_links`' docstring describing exactly what raises and what stays
+  silent. Locked at 1.0 by SemVer.
+
+### Changed
+
+- `Development Status` classifier bumped from `4 - Beta` to
+  `5 - Production/Stable`.
+
 ## [0.4.0] - 2026-05-11
 
 ### Added
