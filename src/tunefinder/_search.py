@@ -272,9 +272,21 @@ def find_links(
 
     Les plateformes sans résultat n'apparaissent pas dans le dict renvoyé.
 
+    Error contract (stable as of 1.0):
+        - Empty / whitespace / non-string ``artist`` or ``title`` raises
+          ``ValueError`` immediately, before any DDGS call.
+        - An unknown platform name raises ``ValueError``.
+        - DDGS errors (rate-limit, timeout, network failure, no results)
+          are caught, logged at WARNING level on the ``tunefinder._search``
+          logger, and the affected platform simply does not appear in the
+          returned dict. The call never propagates a DDGSException to the
+          caller — partial results are preferred over hard failures.
+          Configure logging if you need to surface those warnings.
+
     Raises:
         ValueError: si ``artist`` ou ``title`` est vide, fait uniquement
-            d'espaces, ou n'est pas une ``str``.
+            d'espaces, n'est pas une ``str``, ou si ``platforms`` contient
+            un nom inconnu.
     """
     _validate_query(artist, title)
     cfg = config or get_default_config()
@@ -305,9 +317,15 @@ def find_data(
 
     Le dict renvoyé est directement sérialisable en JSON via ``json.dumps``.
 
+    Error contract (stable as of 1.0): same as ``find_links`` — empty
+    inputs and unknown platforms raise ``ValueError``, DDGS failures are
+    logged and translated into an empty candidate list for the affected
+    platform. See ``find_links`` for the full description.
+
     Raises:
         ValueError: si ``artist`` ou ``title`` est vide, fait uniquement
-            d'espaces, ou n'est pas une ``str``.
+            d'espaces, n'est pas une ``str``, ou si ``platforms`` contient
+            un nom inconnu.
     """
     _validate_query(artist, title)
     cfg = config or get_default_config()

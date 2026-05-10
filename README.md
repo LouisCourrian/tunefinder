@@ -210,6 +210,29 @@ For each requested platform, `tunefinder`:
 4. Scores each candidate against the requested artist + title and any version markers you asked for.
 5. Returns the top-scoring URL — and short-circuits as soon as a perfect match is found in any region.
 
+## 📜 Error contract
+
+The public API has a small, stable contract — locked at 1.0 and protected
+by Semantic Versioning afterwards:
+
+- **Empty / whitespace / non-string `artist` or `title`** → `ValueError`
+  raised immediately, before any DDGS call.
+- **Unknown platform name** in `platforms=[...]` → `ValueError`.
+- **DDGS errors** (rate-limit, timeout, network failure, "no results")
+  → logged at `WARNING` level on the `tunefinder._search` logger; the
+  affected platform simply does not appear in the returned dict
+  (`find_links`) or has an empty candidate list (`find_data`). The call
+  **never propagates a `DDGSException`** to the caller — partial results
+  are preferred over hard failures.
+
+If you need to react to DDGS warnings, configure logging:
+
+```python
+import logging
+logging.getLogger("tunefinder._search").setLevel(logging.WARNING)
+logging.basicConfig()
+```
+
 ## ⚠️ Limitations
 
 - DuckDuckGo may rate-limit or change its HTML at any time, which can
