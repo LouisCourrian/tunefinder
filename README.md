@@ -1,9 +1,9 @@
 # tunefinder
 
 Find streaming links for any track across **Spotify**, **Apple Music**,
-**Deezer** and **YouTube Music** — using DuckDuckGo as a search backend, with
-smart scoring that avoids returning acoustic/remix versions when you asked
-for the original (and vice versa).
+**Deezer**, **YouTube Music**, **Qobuz** and **SoundCloud** — using
+DuckDuckGo as a search backend, with smart scoring that avoids returning
+acoustic/remix versions when you asked for the original (and vice versa).
 
 ## Installation
 
@@ -21,7 +21,9 @@ links = find_links("9Lana", "Balalaika")
 #   "spotify":      "https://open.spotify.com/track/...",
 #   "appleMusic":   "https://music.apple.com/...",
 #   "deezer":       "https://www.deezer.com/track/...",
-#   "youtubeMusic": "https://music.youtube.com/watch?v=..."
+#   "youtubeMusic": "https://music.youtube.com/watch?v=...",
+#   "qobuz":        "https://www.qobuz.com/fr-fr/album/...?track_id=...",
+#   "soundcloud":   "https://soundcloud.com/artist/track-slug",
 # }
 ```
 
@@ -116,12 +118,34 @@ All `Config` fields are documented in `Config.__doc__`.
 
 ## Supported platforms
 
-| Platform      | Key in dict    |
-| ------------- | -------------- |
-| Spotify       | `spotify`      |
-| Apple Music   | `appleMusic`   |
-| Deezer        | `deezer`       |
-| YouTube Music | `youtubeMusic` |
+| Platform      | Key in dict    | Notes                                                       |
+| ------------- | -------------- | ----------------------------------------------------------- |
+| Spotify       | `spotify`      | —                                                           |
+| Apple Music   | `appleMusic`   | —                                                           |
+| Deezer        | `deezer`       | —                                                           |
+| YouTube Music | `youtubeMusic` | Indexation uneven on DuckDuckGo, some tracks won't surface. |
+| Qobuz         | `qobuz`        | Track URL = album page + `?track_id=N` query string.        |
+| SoundCloud    | `soundcloud`   | URLs are `/<artist>/<track-slug>` — playlists are excluded. |
+
+## Unsupported platforms
+
+These services were considered but cannot be supported reliably with
+DuckDuckGo as a search backend:
+
+| Platform     | Why it isn't supported                                                                                                                                |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tidal        | Tidal track pages (`tidal.com/browse/track/...`) are not indexed by DuckDuckGo — no results to score.                                                 |
+| Amazon Music | Track pages are largely JS-rendered or behind a login wall; DuckDuckGo indexation is poor even when querying every regional TLD via `site:A OR site:B`. |
+| Napster      | Since the rebrand, `app.napster.com` track pages are largely behind a login wall and have very weak SEO indexation.                                   |
+
+If indexation improves for any of these, adding them is a one-entry change
+in [`src/tunefinder/_platforms.py`](src/tunefinder/_platforms.py) plus URL
+patterns in [`tests/test_platforms.py`](tests/test_platforms.py).
+
+The URL regex accepts every Amazon Music TLD, so any regional URL returned
+by DuckDuckGo is still validated. To add or remove regions, edit
+``extra_sites`` on the ``amazonMusic`` entry in
+[`src/tunefinder/_platforms.py`](src/tunefinder/_platforms.py).
 
 ## Limitations
 
@@ -135,6 +159,43 @@ All `Config` fields are documented in `Config.__doc__`.
   may not surface in the results even though they exist.
 - This is not affiliated with Spotify, Apple, Deezer, YouTube, or
   DuckDuckGo. All trademarks belong to their respective owners.
+
+## Roadmap
+
+`tunefinder` is currently at **v0.2.0**. The library is functional and
+useful as-is, but a few items remain before tagging a stable **v1.0**.
+
+### Toward v0.3 — housekeeping
+
+- Replace the placeholder author metadata in `pyproject.toml`.
+- Ship a `py.typed` marker so consumer projects pick up the type hints.
+- Add a GitHub Actions workflow running `pytest + ruff + mypy` on every
+  pull request, so `main` cannot regress silently.
+
+### Toward v1.0 — stable API
+
+- Decide and document the error contract: should a DDGS failure (network,
+  rate-limit, parser break) raise an exception, or stay silent and return
+  a partial dict? Whatever the choice, it gets locked at 1.0.
+- Validate inputs explicitly: empty or whitespace-only artist/title
+  should raise `ValueError` instead of silently returning no results.
+- Add a retry/backoff loop on DDGS rate-limit exceptions instead of
+  giving up after the first failure.
+- Search platforms concurrently with a `ThreadPoolExecutor`. Today
+  `find_links` runs the 6 platforms serially, which can take ~20 s for
+  a full lookup — concurrent search would drop this to roughly the time
+  of the slowest single platform.
+- Bump the `Development Status` classifier to `5 - Production/Stable`
+  once the API is considered frozen.
+
+### Considered for later
+
+- Optional in-process TTL cache via `Config(cache_ttl_seconds=...)`.
+- CLI entry point: `python -m tunefinder "9Lana" "Balalaika"` printing
+  the JSON output for shell scripting.
+- An `async` variant for FastAPI / Starlette consumers.
+- Integration tests hitting real DuckDuckGo, gated behind a `slow`
+  marker and only run nightly.
 
 ## License
 

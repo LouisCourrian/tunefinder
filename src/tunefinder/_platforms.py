@@ -45,4 +45,26 @@ PLATFORMS: dict[str, Platform] = {
         site="music.youtube.com",
         pattern=re.compile(r"https://music\.youtube\.com/watch\?v=[a-zA-Z0-9_-]+"),
     ),
+    # Sur Qobuz, l'identifiant de piste vit dans le query string ``?track_id=N``
+    # de la page album. Sans ce paramètre, on ne pointe que vers l'album.
+    "qobuz": Platform(
+        name="qobuz",
+        site="qobuz.com",
+        pattern=re.compile(
+            r"https://(?:www\.)?qobuz\.com/[a-z]{2}-[a-z]{2}/album/"
+            r"[^?\s\"'<>]+\?track_id=\d+"
+        ),
+    ),
+    # SoundCloud expose les pistes sous /<user>/<track-slug>. On exclut
+    # explicitement les playlists (/<user>/sets/...) et quelques chemins
+    # système qui ne sont jamais des pistes.
+    "soundcloud": Platform(
+        name="soundcloud",
+        site="soundcloud.com",
+        pattern=re.compile(
+            r"https://soundcloud\.com/[\w.-]+/"
+            r"(?!(?:sets|reposts|tracks|albums|likes|followers|following|"
+            r"comments|stations|popular)\b)[\w.-]+"
+        ),
+    ),
 }

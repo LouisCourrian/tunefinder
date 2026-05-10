@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-10
+
+### Added
+
+- Support for **Qobuz** (`qobuz` key) — track URLs identified by
+  `?track_id=N` on the album page.
+- Support for **SoundCloud** (`soundcloud` key) — playlists (`/sets/`),
+  user pages and system paths (`/likes`, `/reposts`, …) are excluded.
+
+### Documented
+
+- New "Unsupported platforms" section in the README explaining why
+  **Tidal**, **Amazon Music** and **Napster** cannot be supported reliably
+  with DuckDuckGo as a search backend (no/poor SEO indexation, login walls).
+- New "Roadmap" section in the README outlining the work planned to
+  reach v0.3 (housekeeping) and v1.0 (stable API).
+
 ## [0.1.0] - 2026-05-04
 
 ### Added

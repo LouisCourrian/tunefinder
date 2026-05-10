@@ -4,15 +4,24 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tunefinder"
-version = "0.1.0"
-description = "Find streaming links (Spotify, Apple Music, Deezer, YouTube Music) for any track."
+version = "0.2.0"
+description = "Find streaming links (Spotify, Apple Music, Deezer, YouTube Music, Qobuz, SoundCloud) for any track."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [
     { name = "Your Name", email = "you@example.com" },
 ]
-keywords = ["music", "streaming", "spotify", "deezer", "apple-music", "youtube-music"]
+keywords = [
+    "music",
+    "streaming",
+    "spotify",
+    "deezer",
+    "apple-music",
+    "youtube-music",
+    "qobuz",
+    "soundcloud",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",

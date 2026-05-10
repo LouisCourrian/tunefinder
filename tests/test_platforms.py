@@ -17,6 +17,10 @@ from tunefinder._platforms import PLATFORMS
         ("deezer", "https://www.deezer.com/fr/track/123456"),
         ("youtubeMusic", "https://music.youtube.com/watch?v=dQw4w9WgXcQ"),
         ("youtubeMusic", "https://music.youtube.com/watch?v=abc-DEF_123"),
+        ("qobuz", "https://www.qobuz.com/fr-fr/album/blinding-lights-the-weeknd/0602508693090?track_id=35900682"),
+        ("qobuz", "https://qobuz.com/us-en/album/some-album/123?track_id=999"),
+        ("soundcloud", "https://soundcloud.com/theweeknd/blinding-lights"),
+        ("soundcloud", "https://soundcloud.com/some.user-name/track-slug"),
     ],
 )
 def test_pattern_matches_valid_url(platform: str, url: str) -> None:
@@ -34,6 +38,15 @@ def test_pattern_matches_valid_url(platform: str, url: str) -> None:
         # mauvais protocole / domaine
         ("spotify", "http://open.spotify.com/track/abc"),
         ("youtubeMusic", "https://www.youtube.com/watch?v=abc"),
+        # Qobuz : page album sans ?track_id → on ne sait pas viser une piste
+        ("qobuz", "https://www.qobuz.com/fr-fr/album/blinding-lights/0602508693090"),
+        # Qobuz : autre type de page
+        ("qobuz", "https://www.qobuz.com/fr-fr/interpreter/the-weeknd/123"),
+        # SoundCloud : playlist (sets) et page utilisateur
+        ("soundcloud", "https://soundcloud.com/theweeknd/sets/best-of"),
+        ("soundcloud", "https://soundcloud.com/theweeknd"),
+        # SoundCloud : chemins système
+        ("soundcloud", "https://soundcloud.com/theweeknd/likes"),
     ],
 )
 def test_pattern_rejects_invalid_url(platform: str, url: str) -> None:
