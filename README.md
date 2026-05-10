@@ -234,7 +234,7 @@ pytest
 
 ## ✅ Status
 
-`tunefinder` is currently at **`0.3.0`** (Beta). The public API —
+`tunefinder` is currently at **`0.4.0`** (Beta). The public API —
 `find_links`, `find_data`, `print_search_debug`, `Config` — works and is
 unlikely to change much, but breaking changes are still allowed within
 the `0.x` series. Once `1.0.0` ships, the API follows Semantic Versioning:
@@ -251,11 +251,11 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history.
       type checkers (mypy, pyright, …).
 - [x] **GitHub Actions CI** — `ruff` + `mypy --strict` + `pytest` on
       Python 3.10–3.13 for every push and PR on `main`.
+
+### Done in 0.4
+
 - [x] **Automated GitHub releases** — pushing a `v*.*.*` tag publishes a
       release whose body is extracted from `CHANGELOG.md`.
-
-### Done on `main` since 0.3.0 (will ship in the next minor release)
-
 - [x] **CLI** — `tunefinder ARTIST TITLE` (or `python -m tunefinder ...`)
       with `--data` / `--debug` / `--platforms` / `--regions` /
       `--delay` / `--pretty` flags. Output is JSON by default

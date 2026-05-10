@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-11
+
 ### Added
 
 - **Command-line interface** (`tunefinder ARTIST TITLE` after install,
@@ -27,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Python versions, license, tests), emoji-headed sections, dedicated
   "Status" and "Roadmap to 1.0" sections with checkbox-tracked progress,
   and a `## Try it` quickstart for contributors.
+
+### Fixed
+
+- CLI no longer crashes with `UnicodeEncodeError` on Windows consoles
+  whose default codepage (`cp1252`) cannot encode characters that
+  routinely appear in DuckDuckGo result snippets (CJK titles, accented
+  punctuation, `→`, emoji). `sys.stdout` is now reconfigured to UTF-8
+  at the start of `main()`.
 
 ## [0.3.0] - 2026-05-10
 
