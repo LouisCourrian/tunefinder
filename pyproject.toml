@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [
-    { name = "Your Name", email = "you@example.com" },
+    { name = "Louis Courrian", email = "louis.courrian@gmail.com" },
 ]
 keywords = [
     "music",
@@ -23,7 +23,7 @@ keywords = [
     "soundcloud",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -33,6 +33,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Multimedia :: Sound/Audio",
     "Topic :: Internet",
+    "Typing :: Typed",
 ]
 dependencies = [
     "ddgs>=9.0.0",
@@ -47,9 +48,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/tunefinder"
-Issues = "https://github.com/yourusername/tunefinder/issues"
-Changelog = "https://github.com/yourusername/tunefinder/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/LouisCourrian/tunefinder"
+Issues = "https://github.com/LouisCourrian/tunefinder/issues"
+Changelog = "https://github.com/LouisCourrian/tunefinder/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tunefinder"]

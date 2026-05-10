@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- PEP 561 `py.typed` marker — type annotations are now exposed to
+  consumers' type checkers (mypy, pyright, …).
+- GitHub Actions CI workflow running `ruff`, `mypy` and `pytest` on
+  Python 3.10–3.13 for every push and PR on `main`.
+
+### Changed
+
+- Real author metadata and GitHub URLs in `pyproject.toml` (no more
+  placeholders).
+- `Development Status` classifier bumped from `3 - Alpha` to
+  `4 - Beta` to reflect that the API is stabilising toward 1.0.
+
 ## [0.2.0] - 2026-05-10
 
 ### Added
