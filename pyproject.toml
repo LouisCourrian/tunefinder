@@ -47,6 +47,9 @@ dev = [
     "mypy>=1.10",
 ]
 
+[project.scripts]
+tunefinder = "tunefinder.__main__:main"
+
 [project.urls]
 Homepage = "https://github.com/LouisCourrian/tunefinder"
 Issues = "https://github.com/LouisCourrian/tunefinder/issues"

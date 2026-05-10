@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Command-line interface** (`tunefinder ARTIST TITLE` after install,
+  or `python -m tunefinder ...`). Output is JSON by default — compact
+  when piping, indented automatically when stdout is a TTY. Supports
+  `--platforms`, `--regions`, `--delay`, `--data` (full audit with
+  scores), `--debug` (human-readable trace), `--pretty` and `--version`.
+  Implementation lives in `src/tunefinder/__main__.py`; entry point
+  registered via `[project.scripts]` in `pyproject.toml`.
 - GitHub Actions release workflow (`.github/workflows/release.yml`):
   every pushed `v*.*.*` tag now publishes a GitHub Release with notes
   extracted automatically from `CHANGELOG.md`. Supports manual

@@ -132,6 +132,33 @@ find_links("Stromae", "Alors on danse", config=config)
 
 All `Config` fields are documented in `Config.__doc__`.
 
+## 🛠️ CLI
+
+`tunefinder` also exposes a small command-line interface — handy for
+shell scripts, smoke tests, or one-off lookups without writing Python:
+
+```bash
+# JSON dict on stdout (compact for piping, indented when stdout is a TTY)
+tunefinder "9Lana" "Balalaika"
+
+# Restrict to specific platforms
+tunefinder "9Lana" "Balalaika" --platforms spotify deezer
+
+# Full audit: every candidate with scores, as JSON
+tunefinder "9Lana" "Balalaika" --data
+
+# Human-readable trace: which candidate won and why
+tunefinder "9Lana" "Balalaika" --debug
+
+# Tune the search
+tunefinder "Stromae" "Alors on danse" --regions fr-fr us-en --delay 0.5
+```
+
+It also runs as `python -m tunefinder ...` if the entry point is not on
+your `PATH` (useful in unactivated virtual environments).
+
+Run `tunefinder --help` for the full reference.
+
 ## 🎯 Why not just search?
 
 DuckDuckGo (and any search engine) returns multiple versions of the same
@@ -227,6 +254,13 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 - [x] **Automated GitHub releases** — pushing a `v*.*.*` tag publishes a
       release whose body is extracted from `CHANGELOG.md`.
 
+### Done on `main` since 0.3.0 (will ship in the next minor release)
+
+- [x] **CLI** — `tunefinder ARTIST TITLE` (or `python -m tunefinder ...`)
+      with `--data` / `--debug` / `--platforms` / `--regions` /
+      `--delay` / `--pretty` flags. Output is JSON by default
+      (compact for piping, indented on a TTY).
+
 ### Required before tagging 1.0
 
 - [ ] **Validate inputs** — empty / whitespace-only `artist` or `title`
@@ -246,7 +280,6 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 ### Considered for later (post-1.0)
 
 - [ ] Optional in-process TTL cache via `Config(cache_ttl_seconds=...)`.
-- [ ] CLI entry point: `python -m tunefinder "9Lana" "Balalaika"`.
 - [ ] `async` variant for FastAPI / Starlette consumers.
 - [ ] Native API fallback for Apple Music (iTunes Search) and Deezer
       (api.deezer.com) — free, no key, more reliable than DDGS for
