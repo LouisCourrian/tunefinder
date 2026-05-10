@@ -37,16 +37,25 @@ jobs:
         env:
           TAG: ${{ steps.ref.outputs.tag }}
         run: |
-          version="${TAG#v}"
-          # Escape dots so awk's regex treats the version literally.
-          version_re=$(printf '%s' "$version" | sed 's/\./\\./g')
-          awk -v re="^## \\[${version_re}\\]" '
-            $0 ~ re { flag = 1; next }
-            flag && /^## \[/ { exit }
-            flag { print }
-          ' CHANGELOG.md > release-notes.md
+          python3 - <<'PYEOF' > release-notes.md
+          import os, re, sys
+          tag = os.environ["TAG"]
+          version = tag.lstrip("v")
+          header = re.compile(rf"^##\s+\[{re.escape(version)}\]")
+          next_section = re.compile(r"^##\s+\[")
+          in_section = False
+          with open("CHANGELOG.md", encoding="utf-8") as f:
+              for line in f:
+                  if header.match(line):
+                      in_section = True
+                      continue
+                  if in_section and next_section.match(line):
+                      break
+                  if in_section:
+                      sys.stdout.write(line)
+          PYEOF
           if [ ! -s release-notes.md ]; then
-            echo "::error::No CHANGELOG section found for ${TAG} (looked for '## [${version}]')"
+            echo "::error::No CHANGELOG section found for ${TAG} (looked for '## [${TAG#v}]')"
             exit 1
           fi
           echo "===Release notes for ${TAG}==="
