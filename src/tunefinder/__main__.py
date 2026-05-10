@@ -98,6 +98,13 @@ def _build_config(args: argparse.Namespace) -> Config | None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # On Windows the default console codepage is cp1252, which cannot encode
+    # characters outside Latin-1 (CJK, emoji, "→", …) that routinely appear
+    # in DuckDuckGo result snippets. Reconfigure stdout to UTF-8 so JSON
+    # output and the debug trace never crash on a Unicode track title.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
     parser = _build_parser()
     args = parser.parse_args(argv)
     config = _build_config(args)
